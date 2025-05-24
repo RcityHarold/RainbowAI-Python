@@ -1,0 +1,23 @@
+# Web框架
+fastapi==0.95.1
+uvicorn==0.22.0
+pydantic==1.10.7
+python-multipart==0.0.6
+
+# HTTP客户端
+aiohttp==3.8.4
+requests==2.31.0
+
+# 数据库
+surrealdb==0.3.0
+
+# 工具和辅助库
+python-dotenv==1.0.0
+uuid==1.30
+asyncio==3.4.3
+loguru==0.7.0
+pytz==2023.3
+
+# 测试工具
+pytest==7.3.1
+pytest-asyncio==0.21.0

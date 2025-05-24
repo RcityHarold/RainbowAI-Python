@@ -1,0 +1,91 @@
+"""
+配置文件
+"""
+import os
+from typing import Dict, Any
+from dotenv import load_dotenv
+
+# 加载环境变量
+load_dotenv()
+
+# 应用配置
+APP_NAME = "RainbowAI对话管理系统"
+APP_VERSION = "0.1.0"
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+
+# 服务器配置
+HOST = os.getenv("HOST", "0.0.0.0")
+PORT = int(os.getenv("PORT", "8000"))
+
+# 数据库配置
+DB_URL = os.getenv("DB_URL", "memory")  # 默认使用内存存储
+DB_USER = os.getenv("DB_USER", "")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_NAMESPACE = os.getenv("DB_NAMESPACE", "rainbow")
+DB_DATABASE = os.getenv("DB_DATABASE", "dialogue")
+
+# LLM配置
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "mock")  # mock, openai, azure
+LLM_API_KEY = os.getenv("LLM_API_KEY", "")
+LLM_API_URL = os.getenv("LLM_API_URL", "")
+LLM_MODEL = os.getenv("LLM_MODEL", "gpt-3.5-turbo")
+
+# 对话配置
+MAX_CONTEXT_LENGTH = int(os.getenv("MAX_CONTEXT_LENGTH", "4000"))
+RESPONSE_WINDOW_HOURS = int(os.getenv("RESPONSE_WINDOW_HOURS", "3"))
+SESSION_TIMEOUT_HOURS = int(os.getenv("SESSION_TIMEOUT_HOURS", "1"))
+
+# 工具配置
+WEATHER_API_KEY = os.getenv("WEATHER_API_KEY", "")
+SEARCH_API_KEY = os.getenv("SEARCH_API_KEY", "")
+
+# 日志配置
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+LOG_FILE = os.getenv("LOG_FILE", "")
+
+# CORS配置
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
+
+# 获取完整配置
+def get_config() -> Dict[str, Any]:
+    """获取完整配置"""
+    return {
+        "app": {
+            "name": APP_NAME,
+            "version": APP_VERSION,
+            "debug": DEBUG
+        },
+        "server": {
+            "host": HOST,
+            "port": PORT
+        },
+        "database": {
+            "url": DB_URL,
+            "user": DB_USER,
+            "password": DB_PASSWORD,
+            "namespace": DB_NAMESPACE,
+            "database": DB_DATABASE
+        },
+        "llm": {
+            "provider": LLM_PROVIDER,
+            "api_key": LLM_API_KEY,
+            "api_url": LLM_API_URL,
+            "model": LLM_MODEL
+        },
+        "dialogue": {
+            "max_context_length": MAX_CONTEXT_LENGTH,
+            "response_window_hours": RESPONSE_WINDOW_HOURS,
+            "session_timeout_hours": SESSION_TIMEOUT_HOURS
+        },
+        "tools": {
+            "weather_api_key": WEATHER_API_KEY,
+            "search_api_key": SEARCH_API_KEY
+        },
+        "log": {
+            "level": LOG_LEVEL,
+            "file": LOG_FILE
+        },
+        "cors": {
+            "origins": CORS_ORIGINS
+        }
+    }
