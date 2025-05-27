@@ -51,6 +51,8 @@ DEFINE FIELD dialogue_type ON dialogue TYPE string;
 DEFINE FIELD human_id ON dialogue TYPE string;
 DEFINE FIELD ai_id ON dialogue TYPE string;
 DEFINE FIELD relation_id ON dialogue TYPE string;
+DEFINE FIELD title ON dialogue TYPE string;
+DEFINE FIELD description ON dialogue TYPE string;
 DEFINE FIELD created_at ON dialogue TYPE datetime;
 DEFINE FIELD is_active ON dialogue TYPE bool;
 DEFINE FIELD last_activity_at ON dialogue TYPE datetime;

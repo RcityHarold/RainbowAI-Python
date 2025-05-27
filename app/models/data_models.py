@@ -130,6 +130,8 @@ class Dialogue(BaseModel):
     human_id: Optional[str] = None
     ai_id: Optional[str] = None
     relation_id: Optional[str] = None
+    title: Optional[str] = None  # 对话标题
+    description: Optional[str] = None  # 对话描述
     created_at: datetime = Field(default_factory=datetime.utcnow)
     is_active: bool = True
     last_activity_at: datetime = Field(default_factory=datetime.utcnow)
@@ -144,6 +146,8 @@ class Dialogue(BaseModel):
                 "human_id": "user-001",
                 "ai_id": "ai-cleora",
                 "relation_id": None,
+                "title": "新加坡旅行计划",
+                "description": "讨论新加坡旅行的天气、景点和行程安排",
                 "created_at": "2025-05-13T10:00:00Z",
                 "is_active": True,
                 "last_activity_at": "2025-05-13T15:00:00Z",

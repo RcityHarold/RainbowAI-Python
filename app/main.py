@@ -28,7 +28,8 @@ from .schemas.api_schemas import (
     SessionFilterParams,
     MessageFilterParams,
     ToolRequestSchema,
-    ToolResponseSchema
+    ToolResponseSchema,
+    NewDialogueRequest
 )
 
 # 导入日志模块
@@ -555,6 +556,57 @@ async def get_tool_categories():
         raise HTTPException(
             status_code=500,
             detail=f"Error getting tool categories: {str(e)}"
+        )
+
+
+@app.post("/api/dialogues/new", response_model=DialogueResponse)
+async def new_dialogue(request: NewDialogueRequest):
+    """
+    新建对话
+    """
+    try:
+        # 创建对话
+        dialogue = await dialogue_service.create_dialogue(
+            dialogue_type=request.dialogue_type,
+            human_id=request.human_id,
+            ai_id=request.ai_id,
+            title=request.title,
+            description=request.description,
+            metadata=request.metadata
+        )
+        
+        if not dialogue:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to create dialogue"
+            )
+        
+        # 创建默认会话
+        session = await dialogue_service.create_session(
+            dialogue_id=dialogue.id,
+            session_type="dialogue",
+            created_by="system",
+            description="初始对话会话"
+        )
+        
+        if not session:
+            # 如果会话创建失败，也返回对话信息
+            logger.warning(f"Failed to create initial session for dialogue {dialogue.id}")
+            return DialogueResponse(dialogue=dialogue, sessions=[])
+        
+        # 返回对话和会话信息
+        return DialogueResponse(
+            dialogue=dialogue,
+            sessions=[session]
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating new dialogue: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error creating new dialogue: {str(e)}"
         )
 
 

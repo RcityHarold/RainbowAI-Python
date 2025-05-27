@@ -198,6 +198,31 @@ class ToolResponseSchema(BaseModel):
         )
 
 
+class NewDialogueRequest(BaseModel):
+    """新建对话请求"""
+    dialogue_type: str = Field("human_ai", description="对话类型，默认为human_ai")
+    human_id: Optional[str] = Field(None, description="人类用户ID")
+    ai_id: Optional[str] = Field(None, description="AI ID")
+    title: Optional[str] = Field(None, description="对话标题")
+    description: Optional[str] = Field(None, description="对话描述")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="元数据")
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "dialogue_type": "human_ai",
+                "human_id": "user-001",
+                "ai_id": "ai-cleora",
+                "title": "天气查询对话",
+                "description": "关于明天北京天气的对话",
+                "metadata": {
+                    "tags": ["天气", "北京"],
+                    "priority": "normal"
+                }
+            }
+        }
+
+
 class ErrorResponse(BaseModel):
     """错误响应"""
     detail: str = Field(..., description="错误详情")

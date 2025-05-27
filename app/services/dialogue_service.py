@@ -23,6 +23,8 @@ class DialogueService:
         dialogue_type: str,
         human_id: Optional[str] = None,
         ai_id: Optional[str] = None,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None
     ) -> Optional[Dialogue]:
         """
@@ -32,6 +34,8 @@ class DialogueService:
             dialogue_type: 对话类型
             human_id: 人类ID
             ai_id: AI ID
+            title: 对话标题
+            description: 对话描述
             metadata: 元数据
         
         Returns:
@@ -43,6 +47,8 @@ class DialogueService:
                 dialogue_type=dialogue_type,
                 human_id=human_id,
                 ai_id=ai_id,
+                title=title,
+                description=description,
                 metadata=metadata or {}
             )
             
