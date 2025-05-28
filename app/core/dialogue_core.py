@@ -2,10 +2,11 @@
 对话调度器（DialogueCore）
 路由到不同对话类型的处理流
 """
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Optional, Union, Callable, Awaitable
 import logging
 import asyncio
 import uuid
+import json
 from datetime import datetime
 
 from ..models.data_models import Message, Turn, Session, Dialogue
@@ -14,6 +15,8 @@ from .context_builder import ContextBuilder
 from .llm_caller import LLMCaller
 from .tool_invoker import ToolInvoker
 from .response_mixer import ResponseMixer
+from .multimodal_handler import multimodal_handler
+from ..services.notification_service import notification_service
 
 
 class DialogueCore:
@@ -32,105 +35,183 @@ class DialogueCore:
     async def process_message(
         self,
         message: Message,
-        dialogue: Optional[Dialogue] = None,
-        session: Optional[Session] = None,
-        turn: Optional[Turn] = None
+        history: List[Message] = None,
+        stream_callback: Optional[Callable[[str, bool], Awaitable[None]]] = None
     ) -> Dict[str, Any]:
         """
         处理消息
         
         Args:
             message: 消息对象
-            dialogue: 对话对象，如果为None则创建新对话
-            session: 会话对象，如果为None则创建新会话
-            turn: 轮次对象，如果为None则创建新轮次
+            history: 历史消息列表
+            stream_callback: 流式响应回调函数
         
         Returns:
-            处理结果，包含响应消息和更新的对话/会话/轮次对象
+            处理结果
         """
         self.logger.info(f"Processing message: {message.id}")
         
-        # 1. 创建或获取对话、会话、轮次
-        dialogue, session, turn = await self._ensure_dialogue_context(
-            message, dialogue, session, turn
-        )
+        # 如果没有提供流式响应回调，使用默认的通知服务
+        if stream_callback is None:
+            async def default_stream_callback(content: str, is_complete: bool):
+                await notification_service.send_stream_response(
+                    dialogue_id=message.dialogue_id,
+                    session_id=message.session_id,
+                    turn_id=message.turn_id,
+                    content=content,
+                    is_complete=is_complete
+                )
+            stream_callback = default_stream_callback
         
-        # 2. 解析输入
-        semantic_block = self.input_parser.parse(message)
-        self.logger.info(f"Parsed input: {semantic_block.text_block[:50]}...")
-        
-        # 3. 构建上下文
-        context = self.context_builder.build_context(
-            dialogue_id=dialogue.id,
-            current_turn=turn,
-            current_message=message,
-            semantic_block=semantic_block
-        )
-        prompt = self.context_builder.to_prompt_text(context)
-        
-        # 4. 调用LLM
-        llm_response = await self.llm_caller.call(prompt)
-        llm_content = llm_response.get("content", "")
-        self.logger.info(f"LLM response: {llm_content[:50]}...")
-        
-        # 5. 检查是否需要工具调用
-        tool_results = []
-        if self._needs_tool(llm_content):
-            self.logger.info("Tool call needed")
+        try:
+            # 1. 处理多模态内容
+            multimodal_content = None
+            if message.content_type.startswith("multimodal/") and message.metadata and "media" in message.metadata:
+                # 提取多模态内容
+                multimodal_content = self._process_multimodal_content(message)
             
-            # 解析工具请求
-            tool_request = self._parse_tool_request(llm_content)
+            # 2. 解析输入
+            semantic_block = self.input_parser.parse(message)
+            self.logger.info(f"Parsed input: {semantic_block.text_block[:50]}...")
             
-            # 调用工具
-            tool_result = await self.tool_invoker.invoke_tool(
-                tool_id=tool_request["tool"],
-                parameters=tool_request["parameters"]
+            # 3. 构建上下文
+            context = self.context_builder.build_context(
+                message=message,
+                history=history,
+                multimodal_content=multimodal_content
             )
-            tool_results.append(tool_result.to_dict())
+            prompt = self.context_builder.to_prompt_text(context)
             
-            # 更新上下文并再次调用LLM
-            updated_context = self._update_context_with_tool_result(context, tool_result)
-            updated_prompt = self.context_builder.to_prompt_text(updated_context)
+            # 4. 调用LLM（流式响应）
+            response_content = ""
+            async for chunk in self.llm_caller.stream_call(prompt):
+                chunk_content = chunk.get("content", "")
+                response_content += chunk_content
+                
+                # 发送流式响应
+                await stream_callback(response_content, False)
             
-            llm_response = await self.llm_caller.call(updated_prompt)
-            llm_content = llm_response.get("content", "")
-            self.logger.info(f"Updated LLM response: {llm_content[:50]}...")
-        
-        # 6. 组装响应
-        response_object = self.response_mixer.mix_response(
-            llm_response=llm_content,
-            tool_results=tool_results
-        )
-        
-        # 7. 创建响应消息
-        response_message = self.response_mixer.create_response_message(
-            dialogue_id=dialogue.id,
-            session_id=session.id,
-            turn_id=turn.id,
-            content=response_object["content"],
-            sender_id="ai-system",  # 实际应使用配置的AI ID
-            metadata={
-                "original_content": response_object["original_content"],
+            self.logger.info(f"LLM response: {response_content[:50]}...")
+            
+            # 5. 检查是否需要工具调用
+            tool_results = []
+            if self._needs_tool(response_content):
+                self.logger.info("Tool call needed")
+                
+                # 解析工具请求
+                tool_request = self._parse_tool_request(response_content)
+                
+                # 发送工具调用通知
+                await stream_callback(
+                    f"{response_content}\n\n[正在调用工具: {tool_request['tool']}]", 
+                    False
+                )
+                
+                # 调用工具
+                tool_result = await self.tool_invoker.invoke_tool(
+                    tool_id=tool_request["tool"],
+                    parameters=tool_request["parameters"]
+                )
+                tool_results.append(tool_result.to_dict())
+                
+                # 更新上下文并再次调用LLM
+                updated_context = self._update_context_with_tool_result(context, tool_result)
+                updated_prompt = self.context_builder.to_prompt_text(updated_context)
+                
+                # 发送工具结果通知
+                await stream_callback(
+                    f"{response_content}\n\n[工具结果: {tool_result.to_text()}]\n\n[正在生成最终回复...]", 
+                    False
+                )
+                
+                # 再次调用LLM（流式响应）
+                final_response = ""
+                async for chunk in self.llm_caller.stream_call(updated_prompt):
+                    chunk_content = chunk.get("content", "")
+                    final_response += chunk_content
+                    
+                    # 发送流式响应
+                    await stream_callback(
+                        f"{response_content}\n\n[工具结果: {tool_result.to_text()}]\n\n{final_response}", 
+                        False
+                    )
+                
+                response_content = final_response
+                self.logger.info(f"Final response: {response_content[:50]}...")
+            
+            # 6. 组装响应
+            response_object = self.response_mixer.mix_response(
+                llm_response=response_content,
+                tool_results=tool_results
+            )
+            
+            # 发送完成通知
+            await stream_callback(response_object["content"], True)
+            
+            # 7. 返回结果
+            return {
+                "content": response_object["content"],
+                "content_type": "text",  # 默认为文本
                 "tool_results": tool_results,
-                "modifiers_applied": response_object["modifiers_applied"]
+                "ai_id": "ai-system",  # 实际应使用配置的AI ID
+                "metadata": {
+                    "tool_results": tool_results,
+                    "multimodal": multimodal_content is not None
+                }
             }
-        )
+            
+        except Exception as e:
+            self.logger.error(f"Error processing message: {str(e)}")
+            # 发送错误通知
+            await stream_callback(f"处理消息时发生错误: {str(e)}", True)
+            
+            # 返回错误结果
+            return {
+                "content": f"处理消息时发生错误: {str(e)}",
+                "content_type": "text",
+                "tool_results": [],
+                "ai_id": "ai-system",
+                "metadata": {
+                    "error": str(e)
+                }
+            }
+    
+    def _process_multimodal_content(self, message: Message) -> Dict[str, Any]:
+        """
+        处理多模态内容
         
-        # 8. 更新轮次状态
-        turn.messages.append(response_message.id)
-        turn.status = "responded"
-        turn.closed_at = datetime.utcnow()
+        Args:
+            message: 消息对象
         
-        # 9. 返回结果
-        return {
-            "dialogue": dialogue,
-            "session": session,
-            "turn": turn,
-            "input_message": message,
-            "response_message": response_message,
-            "context": context,
-            "tool_results": tool_results
-        }
+        Returns:
+            处理结果
+        """
+        try:
+            # 提取媒体信息
+            media_info = message.metadata.get("media", [])
+            if not media_info:
+                return None
+            
+            result = {
+                "type": message.content_type.split("/")[1],  # 例如 "image", "audio", "video"
+                "items": []
+            }
+            
+            # 处理每个媒体项
+            for item in media_info:
+                media_item = {
+                    "url": item.get("url", ""),
+                    "mime_type": item.get("mime_type", ""),
+                    "category": item.get("category", ""),
+                    "metadata": item.get("metadata", {})
+                }
+                result["items"].append(media_item)
+            
+            return result
+        
+        except Exception as e:
+            self.logger.error(f"Error processing multimodal content: {str(e)}")
+            return None
     
     async def _ensure_dialogue_context(
         self,

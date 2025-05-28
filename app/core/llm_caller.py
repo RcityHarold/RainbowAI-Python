@@ -2,7 +2,7 @@
 LLM调用器（LLMCaller）
 执行大模型API调用，支持链式推理、多轮生成
 """
-from typing import Dict, Any, List, Optional, Union, Callable
+from typing import Dict, Any, List, Optional, Union, Callable, AsyncGenerator
 import json
 import logging
 from datetime import datetime
@@ -37,7 +37,8 @@ class LLMCaller:
         self,
         prompt: str,
         params: Dict[str, Any] = None,
-        callback: Callable = None
+        callback: Callable = None,
+        stream: bool = False
     ) -> Dict[str, Any]:
         """
         调用LLM生成响应
@@ -46,6 +47,7 @@ class LLMCaller:
             prompt: 提示词
             params: 调用参数
             callback: 回调函数，用于处理响应
+            stream: 是否使用流式响应
         
         Returns:
             LLM响应
@@ -60,14 +62,33 @@ class LLMCaller:
         self.logger.debug(f"Prompt: {prompt[:200]}...")
         
         try:
-            # 调用LLM
-            response = await self.client.generate(prompt, **call_params)
+            # 如果要求流式响应，使用流式生成
+            if stream:
+                # 收集所有流式响应并合并
+                full_content = ""
+                async for chunk in self.client.generate_stream(prompt, **call_params):
+                    chunk_content = chunk.get("content", "")
+                    full_content += chunk_content
+                    
+                    # 如果有回调函数，执行回调
+                    if callback:
+                        callback(chunk, full_content)
+                
+                # 构造完整响应
+                response = {
+                    "content": full_content,
+                    "created": datetime.utcnow().isoformat(),
+                    "id": str(uuid.uuid4())
+                }
+            else:
+                # 正常调用LLM
+                response = await self.client.generate(prompt, **call_params)
             
             # 记录响应
             self.logger.info(f"Received response with length: {len(response.get('content', ''))}")
             
-            # 如果有回调函数，执行回调
-            if callback:
+            # 如果有回调函数且不是流式模式，执行回调
+            if callback and not stream:
                 callback(response)
             
             return response
@@ -206,3 +227,41 @@ class LLMCaller:
             "error": "Exceeded maximum tool calls without final response",
             "tool_calls": tool_calls
         }
+    
+    async def stream_call(
+        self,
+        prompt: str,
+        params: Dict[str, Any] = None
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        """
+        流式调用LLM生成响应
+        
+        Args:
+            prompt: 提示词
+            params: 调用参数
+        
+        Yields:
+            LLM响应块
+        """
+        # 合并默认参数和自定义参数
+        call_params = {**self.default_params}
+        if params:
+            call_params.update(params)
+        
+        # 记录调用信息
+        self.logger.info(f"Streaming LLM call with prompt length: {len(prompt)}")
+        self.logger.debug(f"Prompt: {prompt[:200]}...")
+        
+        try:
+            # 调用LLM流式生成
+            async for chunk in self.client.generate_stream(prompt, **call_params):
+                yield chunk
+        
+        except Exception as e:
+            self.logger.error(f"Error in stream_call: {str(e)}")
+            # 返回错误响应
+            yield {
+                "error": str(e),
+                "content": "抱歉，我在处理您的请求时遇到了问题。请稍后再试。",
+                "created": datetime.utcnow().isoformat()
+            }

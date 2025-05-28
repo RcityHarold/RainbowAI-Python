@@ -4,9 +4,11 @@
 import logging
 import asyncio
 import uuid
+import os
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 from .core.input_hub import InputHub
@@ -56,6 +58,11 @@ dialogue_core = DialogueCore()
 from .db.database import db
 from .db.repositories import message_repo, turn_repo, session_repo, dialogue_repo
 from .services.dialogue_service import dialogue_service
+
+# 导入API路由
+from .api import dialogues, sessions, turns, messages, tools, realtime, media, introspection, multi_agent, knowledge_base
+from .core.multimodal_handler import multimodal_handler
+from .config import get_config
 
 
 @app.get("/")
@@ -626,12 +633,36 @@ async def process_dialogue(message: Message):
         logger.error(f"Error processing dialogue: {str(e)}")
 
 
+# 注册API路由
+app.include_router(dialogues.router)
+app.include_router(sessions.router)
+app.include_router(turns.router)
+app.include_router(messages.router)
+app.include_router(tools.router)
+app.include_router(realtime.router)
+app.include_router(media.router)
+app.include_router(introspection.router)
+app.include_router(multi_agent.router)
+app.include_router(knowledge_base.router)
+
 @app.on_event("startup")
 async def startup_event():
     """应用程序启动事件"""
     # 连接数据库
     await db.connect()
     logger.info("Database connected")
+    
+    # 创建媒体目录
+    config = get_config()
+    media_dir = config.get("MEDIA_STORAGE_PATH", "media")
+    os.makedirs(media_dir, exist_ok=True)
+    os.makedirs(os.path.join(media_dir, "images"), exist_ok=True)
+    os.makedirs(os.path.join(media_dir, "audio"), exist_ok=True)
+    os.makedirs(os.path.join(media_dir, "video"), exist_ok=True)
+    
+    # 挂载媒体目录作为静态文件
+    app.mount("/media", StaticFiles(directory=media_dir), name="media")
+    logger.info(f"Media directory mounted: {media_dir}")
 
 @app.on_event("shutdown")
 async def shutdown_event():

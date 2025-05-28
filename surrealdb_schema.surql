@@ -149,6 +149,62 @@ DEFINE FIELD content_data ON content_store TYPE string;
 DEFINE FIELD metadata ON content_store TYPE object;
 DEFINE FIELD created_at ON content_store TYPE datetime;
 
+-- 创建自我反思会话表
+DEFINE TABLE introspection_session SCHEMAFULL;
+DEFINE FIELD ai_id ON introspection_session TYPE string;
+DEFINE FIELD session_type ON introspection_session TYPE string;
+DEFINE FIELD trigger_source ON introspection_session TYPE string;
+DEFINE FIELD goal ON introspection_session TYPE string;
+DEFINE FIELD started_at ON introspection_session TYPE datetime;
+DEFINE FIELD completed_at ON introspection_session TYPE datetime;
+DEFINE FIELD steps ON introspection_session TYPE array;
+DEFINE FIELD summary ON introspection_session TYPE string;
+DEFINE FIELD metadata ON introspection_session TYPE object;
+
+-- 创建多智能体协作会话表
+DEFINE TABLE collaboration_session SCHEMAFULL;
+DEFINE FIELD task ON collaboration_session TYPE string;
+DEFINE FIELD agent_ids ON collaboration_session TYPE array;
+DEFINE FIELD initiator_id ON collaboration_session TYPE string;
+DEFINE FIELD created_at ON collaboration_session TYPE datetime;
+DEFINE FIELD closed_at ON collaboration_session TYPE datetime;
+DEFINE FIELD status ON collaboration_session TYPE string;
+DEFINE FIELD dialogue_id ON collaboration_session TYPE string;
+DEFINE FIELD metadata ON collaboration_session TYPE object;
+
+-- 创建智能体表
+DEFINE TABLE agent SCHEMAFULL;
+DEFINE FIELD name ON agent TYPE string;
+DEFINE FIELD role ON agent TYPE string;
+DEFINE FIELD description ON agent TYPE string;
+DEFINE FIELD capabilities ON agent TYPE array;
+DEFINE FIELD system_prompt ON agent TYPE string;
+DEFINE FIELD created_at ON agent TYPE datetime;
+DEFINE FIELD metadata ON agent TYPE object;
+
+-- 创建协作消息表
+DEFINE TABLE collaboration_message SCHEMAFULL;
+DEFINE FIELD session_id ON collaboration_message TYPE string;
+DEFINE FIELD sender_id ON collaboration_message TYPE string;
+DEFINE FIELD sender_name ON collaboration_message TYPE string;
+DEFINE FIELD sender_role ON collaboration_message TYPE string;
+DEFINE FIELD content ON collaboration_message TYPE string;
+DEFINE FIELD target_agent_ids ON collaboration_message TYPE array;
+DEFINE FIELD created_at ON collaboration_message TYPE datetime;
+DEFINE FIELD metadata ON collaboration_message TYPE object;
+
+-- 创建知识库连接器表
+DEFINE TABLE knowledge_connector SCHEMAFULL;
+DEFINE FIELD name ON knowledge_connector TYPE string;
+DEFINE FIELD type ON knowledge_connector TYPE string;
+DEFINE FIELD api_url ON knowledge_connector TYPE string;
+DEFINE FIELD collection_name ON knowledge_connector TYPE string;
+DEFINE FIELD index_name ON knowledge_connector TYPE string;
+DEFINE FIELD embedding_model ON knowledge_connector TYPE string;
+DEFINE FIELD created_at ON knowledge_connector TYPE datetime;
+DEFINE FIELD last_used_at ON knowledge_connector TYPE datetime;
+DEFINE FIELD metadata ON knowledge_connector TYPE object;
+
 -- 创建用户表
 DEFINE TABLE user SCHEMAFULL;
 DEFINE FIELD username ON user TYPE string;

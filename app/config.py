@@ -46,6 +46,11 @@ LOG_FILE = os.getenv("LOG_FILE", "")
 # CORS配置
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
 
+# 媒体存储配置
+MEDIA_STORAGE_PATH = os.getenv("MEDIA_STORAGE_PATH", "media")
+MAX_UPLOAD_SIZE_MB = int(os.getenv("MAX_UPLOAD_SIZE_MB", "10"))  # 默认10MB
+ALLOWED_MEDIA_TYPES = os.getenv("ALLOWED_MEDIA_TYPES", "image,audio,video").split(",")
+
 # 获取完整配置
 def get_config() -> Dict[str, Any]:
     """获取完整配置"""
@@ -87,5 +92,10 @@ def get_config() -> Dict[str, Any]:
         },
         "cors": {
             "origins": CORS_ORIGINS
+        },
+        "media": {
+            "storage_path": MEDIA_STORAGE_PATH,
+            "max_upload_size_mb": MAX_UPLOAD_SIZE_MB,
+            "allowed_types": ALLOWED_MEDIA_TYPES
         }
     }
