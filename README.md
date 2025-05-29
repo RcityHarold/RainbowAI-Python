@@ -24,6 +24,7 @@
 ### 功能特性
 
 - **多轮对话管理**：支持持续的多轮对话，保持上下文连贯性
+- **多种对话类型**：支持七种对话类型，包括人类-AI私聊、人类-人类群聊、AI自省等
 - **会话与对话分离**：清晰的会话和对话划分，支持多级组织结构
 - **多模型支持**：可集成多种 LLM 模型，如 OpenAI、Claude 等
 - **数据持久化**：使用 SurrealDB 实现对话和消息的持久化存储
@@ -127,9 +128,19 @@ docker run -p 8000:8000 rainbowai-python
 
 - `POST /api/input` - 处理用户输入并生成响应
 - `GET /api/dialogues` - 获取对话列表，支持分页和筛选
-- `POST /api/dialogues` - 创建新对话
+- `POST /api/dialogues/new` - 创建新对话（通用）
 - `GET /api/dialogues/{dialogue_id}` - 获取特定对话
 - `POST /api/dialogues/{dialogue_id}/close` - 关闭对话
+
+### 对话类型端点
+
+- `POST /api/dialogues/human_ai` - 创建人类 ⇄ AI 私聊对话
+- `POST /api/dialogues/ai_self` - 创建 AI ⇄ 自我（自省/觉知）对话
+- `POST /api/dialogues/ai_ai` - 创建 AI ⇄ AI 对话
+- `POST /api/dialogues/human_human_private` - 创建人类 ⇄ 人类私聊对话
+- `POST /api/dialogues/human_human_group` - 创建人类 ⇄ 人类群聊对话
+- `POST /api/dialogues/human_ai_group` - 创建人类 ⇄ AI 群组对话
+- `POST /api/dialogues/ai_multi_human` - 创建 AI ⇄ 多人类群组对话
 
 ### 消息管理
 
@@ -167,7 +178,7 @@ docker run -p 8000:8000 rainbowai-python
 
 - `human_id` - 人类用户ID
 - `ai_id` - AI ID
-- `dialogue_type` - 对话类型
+- `dialogue_type` - 对话类型（human_ai、ai_self、ai_ai、human_human_private、human_human_group、human_ai_group、ai_multi_human）
 - `status` - 状态（active/closed）
 - `start_date` - 开始日期
 - `end_date` - 结束日期

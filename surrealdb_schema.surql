@@ -47,6 +47,14 @@ DEFINE FIELD metadata ON session TYPE object;
 
 -- 对话表（Dialogue）
 DEFINE TABLE dialogue SCHEMAFULL;
+-- 对话类型：
+-- human_ai - 人类 ⇄ AI 私聊
+-- ai_self - AI ⇄ 自我（自省/觉知）
+-- ai_ai - AI ⇄ AI 对话
+-- human_human_private - 人类 ⇄ 人类 私聊
+-- human_human_group - 人类 ⇄ 人类 群聊
+-- human_ai_group - 人类 ⇄ AI 群组 (LIO)
+-- ai_multi_human - AI ⇄ 多人类 群组
 DEFINE FIELD dialogue_type ON dialogue TYPE string;
 DEFINE FIELD human_id ON dialogue TYPE string;
 DEFINE FIELD ai_id ON dialogue TYPE string;
@@ -57,6 +65,12 @@ DEFINE FIELD created_at ON dialogue TYPE datetime;
 DEFINE FIELD is_active ON dialogue TYPE bool;
 DEFINE FIELD last_activity_at ON dialogue TYPE datetime;
 DEFINE FIELD sessions ON dialogue TYPE array;
+-- 元数据字段可包含不同对话类型的特定信息：
+-- human_human_private: second_human_id
+-- human_human_group: group_members
+-- human_ai_group: human_members, ai_members
+-- ai_multi_human: human_participants
+-- ai_ai: participant_ai_ids
 DEFINE FIELD metadata ON dialogue TYPE object;
 
 -- 定义索引

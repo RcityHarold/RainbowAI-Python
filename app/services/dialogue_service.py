@@ -20,6 +20,92 @@ class DialogueService:
     def __init__(self):
         self.logger = logging.getLogger("DialogueService")
         self.dialogue_core = DialogueCore()
+        
+    async def create_dialogue_with_type(
+        self,
+        dialogue_type: str,
+        human_id: Optional[str] = None,
+        ai_id: Optional[str] = None,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> Optional[Dialogue]:
+        """
+        创建指定类型的对话，并验证必要参数
+        
+        Args:
+            dialogue_type: 对话类型
+            human_id: 人类ID
+            ai_id: AI ID
+            title: 对话标题
+            description: 对话描述
+            metadata: 元数据
+        
+        Returns:
+            创建的对话对象
+        """
+        from ..core.constants import DialogueTypes
+        
+        # 验证对话类型
+        if dialogue_type not in DialogueTypes.ALL:
+            self.logger.error(f"Invalid dialogue type: {dialogue_type}")
+            return None
+        
+        # 根据对话类型验证必要参数
+        if dialogue_type == DialogueTypes.HUMAN_AI:
+            # 人类 ⇄ AI 私聊
+            if not human_id or not ai_id:
+                self.logger.error(f"human_id and ai_id are required for dialogue type: {dialogue_type}")
+                return None
+        
+        elif dialogue_type == DialogueTypes.AI_SELF:
+            # AI ⇄ 自我（自省/觉知）
+            if not ai_id:
+                self.logger.error(f"ai_id is required for dialogue type: {dialogue_type}")
+                return None
+        
+        elif dialogue_type == DialogueTypes.AI_AI:
+            # AI ⇄ AI 对话
+            if not ai_id or not metadata or "participant_ai_ids" not in metadata:
+                self.logger.error(f"ai_id and participant_ai_ids are required for dialogue type: {dialogue_type}")
+                return None
+        
+        elif dialogue_type == DialogueTypes.HUMAN_HUMAN_PRIVATE:
+            # 人类 ⇄ 人类 私聊
+            if not human_id or not metadata or "second_human_id" not in metadata:
+                self.logger.error(f"human_id and second_human_id are required for dialogue type: {dialogue_type}")
+                return None
+        
+        elif dialogue_type == DialogueTypes.HUMAN_HUMAN_GROUP:
+            # 人类 ⇄ 人类 群聊
+            if not metadata or "group_members" not in metadata or len(metadata["group_members"]) < 2:
+                self.logger.error(f"At least two group_members are required for dialogue type: {dialogue_type}")
+                return None
+        
+        elif dialogue_type == DialogueTypes.HUMAN_AI_GROUP:
+            # 人类 ⇄ AI 群组 (LIO)
+            if not metadata or "human_members" not in metadata or "ai_members" not in metadata:
+                self.logger.error(f"human_members and ai_members are required for dialogue type: {dialogue_type}")
+                return None
+            if len(metadata["human_members"]) < 1 or len(metadata["ai_members"]) < 1:
+                self.logger.error(f"At least one human and one AI member are required for dialogue type: {dialogue_type}")
+                return None
+        
+        elif dialogue_type == DialogueTypes.AI_MULTI_HUMAN:
+            # AI ⇄ 多人类 群组
+            if not ai_id or not metadata or "human_participants" not in metadata or len(metadata["human_participants"]) < 1:
+                self.logger.error(f"ai_id and at least one human_participant are required for dialogue type: {dialogue_type}")
+                return None
+        
+        # 创建对话
+        return await self.create_dialogue(
+            dialogue_type=dialogue_type,
+            human_id=human_id,
+            ai_id=ai_id,
+            title=title,
+            description=description,
+            metadata=metadata
+        )
     
     async def create_dialogue(
         self,
