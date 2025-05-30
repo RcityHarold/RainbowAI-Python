@@ -10,7 +10,7 @@ import json
 from datetime import datetime
 
 from ..models.data_models import Message, Turn, Session, Dialogue
-from .input_parser import MultiModalInputParser, SemanticBlock
+from .multimodal_input_parser import MultiModalInputParser, Message as MMMessage, ContentType
 from .context_builder import ContextBuilder
 from .llm_caller import LLMCaller
 from .tool_invoker import ToolInvoker
@@ -28,7 +28,7 @@ class DialogueCore:
     """
     def __init__(self):
         self.logger = logging.getLogger("DialogueCore")
-        self.input_parser = MultiModalInputParser()
+        self.multimodal_input_parser = MultiModalInputParser()
         self.context_builder = ContextBuilder()
         self.llm_caller = LLMCaller()
         self.tool_invoker = ToolInvoker()
@@ -109,23 +109,66 @@ class DialogueCore:
             if not media_info:
                 return None
             
-            result = {
-                "type": message.content_type.split("/")[1],  # 例如 "image", "audio", "video"
-                "items": []
-            }
+            # 创建多模态消息列表
+            mm_messages = []
+            
+            # 添加主文本消息（如果有）
+            if message.content and message.content_type == ContentTypes.TEXT:
+                mm_messages.append(MMMessage(
+                    message_id=message.id,
+                    dialogue_id=message.dialogue_id,
+                    turn_id=message.turn_id,
+                    sender_role=message.sender_role,
+                    content_type=ContentType.TEXT.value,
+                    content=message.content,
+                    created_at=message.created_at.isoformat() if hasattr(message, 'created_at') and message.created_at else None
+                ))
             
             # 处理每个媒体项
             for item in media_info:
-                media_item = {
-                    "url": item.get("url", ""),
-                    "mime_type": item.get("mime_type", ""),
-                    "category": item.get("category", ""),
-                    "metadata": item.get("metadata", {})
-                }
-                result["items"].append(media_item)
+                media_type = item.get("type")
+                media_url = item.get("url")
+                media_meta = item.get("metadata", {})
+                
+                if media_type and media_url:
+                    # 映射媒体类型到ContentType
+                    content_type = None
+                    if media_type.startswith("image"):
+                        content_type = ContentType.IMAGE.value
+                    elif media_type.startswith("audio"):
+                        content_type = ContentType.AUDIO.value
+                    else:
+                        # 默认作为文本处理
+                        content_type = ContentType.TEXT.value
+                    
+                    # 创建多模态消息
+                    mm_messages.append(MMMessage(
+                        message_id=f"{message.id}_{len(mm_messages)}",
+                        dialogue_id=message.dialogue_id,
+                        turn_id=message.turn_id,
+                        sender_role=message.sender_role,
+                        content_type=content_type,
+                        content=media_url,
+                        content_meta=media_meta,
+                        created_at=message.created_at.isoformat() if hasattr(message, 'created_at') and message.created_at else None
+                    ))
             
-            return result
-        
+            # 使用多模态输入解析器处理消息
+            if len(mm_messages) == 1:
+                # 单个消息直接解析
+                parsed_result = await self.multimodal_input_parser.parse(mm_messages[0])
+            else:
+                # 多个消息使用混合内容解析
+                parsed_result = await self.multimodal_input_parser.parse_mixed_content(mm_messages)
+            
+            return {
+                "type": "multimodal",
+                "parsed_result": parsed_result,
+                "text_block": parsed_result.get("text_block", ""),
+                "semantic_tags": parsed_result.get("semantic_tags", []),
+                "emotions": parsed_result.get("emotions", ["neutral"]),
+                "modalities": parsed_result.get("modalities", [])
+            }
         except Exception as e:
             self.logger.error(f"Error processing multimodal content: {str(e)}")
             return None
