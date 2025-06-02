@@ -119,7 +119,7 @@ class QuoteReplyResolver:
             prefix = "引用："
         
         # 构建引用文本
-        quote_text = f"{prefix}"{quoted_content}"\n\n{content}"
+        quote_text = f"{prefix}\"{ quoted_content }\"\n\n{content}"
         return quote_text
     
     def _extract_quote_context(self, content: str, quoted_content: str) -> Dict[str, Any]:

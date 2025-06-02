@@ -113,9 +113,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 client_ip=client_ip,
                 status_code=status_code,
                 response_time=response_time,
-                request_data=request_data,
-                response_data=response_data,
-                request_id=request_id
+                request_data=request_data
             )
             
             # 记录请求结束
@@ -160,8 +158,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 status_code=500,
                 response_time=response_time,
                 request_data=request_data,
-                error=str(e),
-                request_id=request_id
+                error=str(e)
             )
             
             # 重新抛出异常，让FastAPI处理

@@ -17,7 +17,8 @@ from ..models.introspection_models import (
 )
 from ..db.repositories.introspection_repo import introspection_repo
 from .llm_caller import LLMCaller
-from .memory_manager import memory_manager
+# 暂时移除不存在的模块导入
+# from .memory_manager import memory_manager
 
 
 class IntrospectionEngine:

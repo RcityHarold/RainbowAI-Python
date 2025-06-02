@@ -99,3 +99,56 @@ def get_config() -> Dict[str, Any]:
             "allowed_types": ALLOWED_MEDIA_TYPES
         }
     }
+
+# 创建settings对象，供其他模块导入
+class Settings:
+    """配置设置类"""
+    def __init__(self):
+        # 应用配置
+        self.APP_NAME = APP_NAME
+        self.APP_VERSION = APP_VERSION
+        self.DEBUG = DEBUG
+        
+        # 服务器配置
+        self.HOST = HOST
+        self.PORT = PORT
+        
+        # 数据库配置
+        self.DB_URL = DB_URL
+        self.DB_USER = DB_USER
+        self.DB_PASSWORD = DB_PASSWORD
+        self.DB_NAMESPACE = DB_NAMESPACE
+        self.DB_DATABASE = DB_DATABASE
+        
+        # LLM配置
+        self.LLM_PROVIDER = LLM_PROVIDER
+        self.LLM_API_KEY = LLM_API_KEY
+        self.LLM_API_URL = LLM_API_URL
+        self.LLM_MODEL = LLM_MODEL
+        
+        # 对话配置
+        self.MAX_CONTEXT_LENGTH = MAX_CONTEXT_LENGTH
+        self.RESPONSE_WINDOW_HOURS = RESPONSE_WINDOW_HOURS
+        self.SESSION_TIMEOUT_HOURS = SESSION_TIMEOUT_HOURS
+        
+        # 工具配置
+        self.WEATHER_API_KEY = WEATHER_API_KEY
+        self.SEARCH_API_KEY = SEARCH_API_KEY
+        
+        # 日志配置
+        self.LOG_LEVEL = LOG_LEVEL
+        self.LOG_FILE = LOG_FILE
+        
+        # CORS配置
+        self.CORS_ORIGINS = CORS_ORIGINS
+        
+        # 媒体存储配置
+        self.MEDIA_STORAGE_PATH = MEDIA_STORAGE_PATH
+        self.MAX_UPLOAD_SIZE_MB = MAX_UPLOAD_SIZE_MB
+        self.ALLOWED_MEDIA_TYPES = ALLOWED_MEDIA_TYPES
+        
+        # 知识库配置
+        self.DEFAULT_KNOWLEDGE_BASES = []
+
+# 创建全局settings实例
+settings = Settings()

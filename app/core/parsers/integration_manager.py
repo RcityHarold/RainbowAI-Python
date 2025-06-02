@@ -188,7 +188,7 @@ class IntegrationManager:
             if image_result and text_result:
                 caption = image_result.get("caption", "图片")
                 text = text_result.get("text_block", "")
-                return f"用户发送了一张{caption}，并表示："{text}""
+                return f"用户发送了一张{caption}，并表示：\"{text}\""
         
         elif "audio" in modalities and "text" in modalities:
             # 音频文本结合的摘要
@@ -198,7 +198,7 @@ class IntegrationManager:
             if audio_result and text_result:
                 transcription = audio_result.get("transcription", "音频内容")
                 text = text_result.get("text_block", "")
-                return f"用户发送了一段音频（内容：{transcription}），并表示："{text}""
+                return f"用户发送了一段音频（内容：{transcription}），并表示：\"{text}\""
         
         # 默认摘要
         modality_texts = {

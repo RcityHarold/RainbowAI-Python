@@ -114,6 +114,12 @@ class BaseToolLegacy:
         Args:
             parameters: 工具调用参数
         
+        Returns:
+            执行结果
+        """
+        raise NotImplementedError("子类必须实现此方法")
+
+
 class ToolInvoker:
     """
     工具调度器
@@ -180,7 +186,7 @@ class ToolInvoker:
         处理工具请求消息
         
         Args:
-            message: 消息对象，应为tool_request类型
+            message: 消息对象, 应为tool_request类型
         
         Returns:
             工具调用结果，如果消息不是工具请求则返回None

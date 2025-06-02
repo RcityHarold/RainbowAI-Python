@@ -9,7 +9,8 @@ import json
 
 from ..db.repositories import message_repo, turn_repo, session_repo, dialogue_repo
 from ..models.data_models import Message, Turn, Session, Dialogue
-from ..core.dialogue_core import DialogueCore
+# 避免循环导入
+# from ..core.dialogue_core import DialogueCore
 from ..core.websocket_manager import websocket_manager
 from .notification_service import notification_service
 
@@ -19,7 +20,8 @@ class DialogueService:
     
     def __init__(self):
         self.logger = logging.getLogger("DialogueService")
-        self.dialogue_core = DialogueCore()
+        # 不在初始化时创建dialogue_core实例，而是在需要时才创建
+        self.dialogue_core = None
         
     async def create_dialogue_with_type(
         self,
@@ -343,6 +345,11 @@ class DialogueService:
                     is_complete=is_complete
                 )
             
+            # 延迟导入和实例化DialogueCore，避免循环导入
+            if self.dialogue_core is None:
+                from ..core.dialogue_core import DialogueCore
+                self.dialogue_core = DialogueCore()
+                
             # 使用对话核心处理消息（流式响应）
             if stream:
                 result = await self.dialogue_core.process_message(

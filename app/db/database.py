@@ -9,7 +9,7 @@ import json
 from datetime import datetime
 
 import surrealdb
-from surrealdb.ws import SurrealWebsocket
+from surrealdb.ws import Surreal
 
 from ..config import get_config
 
@@ -48,7 +48,7 @@ class Database:
             
             # 连接数据库
             self.logger.info(f"Connecting to database: {self.db_url}")
-            self.client = SurrealWebsocket(self.db_url)
+            self.client = Surreal(self.db_url)
             await self.client.connect()
             
             # 登录
