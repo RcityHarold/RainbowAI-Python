@@ -93,7 +93,7 @@ class DialogueCore:
                 }
             }
     
-    def _process_multimodal_content(self, message: Message) -> Dict[str, Any]:
+    async def _process_multimodal_content(self, message: Message) -> Dict[str, Any]:
         """
         处理多模态内容
         
@@ -384,7 +384,7 @@ class DialogueCore:
         multimodal_content = None
         if message.content_type.startswith("multimodal/") and message.metadata and "media" in message.metadata:
             # 提取多模态内容
-            multimodal_content = self._process_multimodal_content(message)
+            multimodal_content = await self._process_multimodal_content(message)
         
         # 2. 解析输入
         semantic_block = self.input_parser.parse(message)

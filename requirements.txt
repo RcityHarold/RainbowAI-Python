@@ -3,10 +3,10 @@ fastapi==0.95.1
 uvicorn==0.22.0
 pydantic==1.10.7
 python-multipart==0.0.6
-websockets==11.0.3
+websockets==10.4
 
 # HTTP客户端
-aiohttp==3.8.4
+aiohttp==3.9.1
 requests==2.31.0
 
 # 数据库

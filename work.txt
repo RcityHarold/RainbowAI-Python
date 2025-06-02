@@ -188,3 +188,18 @@ Session自动分段机制：根据时间间隔自动划分对话Session的功能
 实时通信完善：提升用户体验，特别是在群组对话场景
 测试和文档：确保系统稳定性和可用性
 这些未实现的需求将使RainbowAI对话系统更加完善，能够支持更丰富的对话场景和更智能的交互体验。
+
+
+如果您仍然遇到"externally-managed-environment"错误，请按照以下步骤创建虚拟环境：
+
+创建虚拟环境：
+
+python3 -m venv venv
+激活虚拟环境：
+
+source venv/bin/activate
+
+pip install -r requirements.txt
+在虚拟环境中运行应用：
+
+python -m app.main

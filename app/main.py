@@ -62,6 +62,7 @@ from .services.dialogue_service import dialogue_service
 # 导入API路由
 from .api import sessions, turns, messages, tools, realtime, media, introspection, multi_agent, knowledge_base
 from .api.dialogues import router as dialogues_router
+from .api.dialogue_query import router as dialogue_query_router
 from .core.multimodal_handler import multimodal_handler
 from .config import get_config
 
@@ -636,6 +637,7 @@ async def process_dialogue(message: Message):
 
 # 注册API路由
 app.include_router(dialogues_router, prefix="/api/dialogues", tags=["dialogues"])
+app.include_router(dialogue_query_router, prefix="/api/query", tags=["dialogue_query"])
 app.include_router(sessions.router)
 app.include_router(turns.router)
 app.include_router(messages.router)
